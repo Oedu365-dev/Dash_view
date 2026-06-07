@@ -329,7 +329,8 @@ function renderAll(data) {
   renderTable();
 
   // Renderizar checks
-  window._checksData = data.checks || [];
+  // Filtra checks antigos sem dados processados
+  window._checksData = (data.checks || []).filter(c => c.items && c.items.length > 0);
   renderChecks(window._checksData);
 }
 
