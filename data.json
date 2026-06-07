@@ -1,5 +1,5 @@
 {
-  "publishedAt": "2026-06-07T23:01:39.106Z",
+  "publishedAt": "2026-06-07T23:02:30.950Z",
   "publishedBy": "oedu365-dev",
   "tasks": [
     {
@@ -2580,6 +2580,12 @@
     "pctDone": 79
   },
   "checks": [
+    {
+      "id": 1780873333749,
+      "title": "Check Semanal 01 a 05/07",
+      "date": "07/06/2026",
+      "raw": "Sentimento da semana: Agitado\n\nO que almejo para semana entrante: Constancia\n\n- Troca Kamis e Marcus / Coordenadoraas número de lojas\n- ⁠Checklist Fácil (Custos)\n- ⁠Contato Next IP\n- ⁠Máquinas CSR (Analisar)\n- Agenda Piloto WPP Enterprise\n- Entendimento sobre N8N KT para Dinamização de dados no fluxo;\n- Ajuste LOJA Luz (Mobshop)\n- Documentacionar a pedida do Marcus MKT, derivando a demanda ao Bruno (Subida de Termos - Solides)\n- Falha VD+ Ers\n- Acompanhar Tocada de retirada Ayga \n- Retorno Kah VIC Mobshops\n- Troca Geller sobre Mobs ER \n- Compras TI\n- Agenda TI 30 MIN, Sprints + Expectativas + Ação\n- Validar datas de agendas CANAL LOJAS e ER;\n- Gab Grupo Wpp Contador de Fluxo;\n- Troca Arthur, escopo do sistema (Onde estamos), Aguardando o mesmo soltar a documentação;\n- Cobrar Documentação LIGA (Cruzamento de Economias)\n- Aprovação Caixas Fortinet;\n- Aprovação Licença Fortinet;\n- Aprovação Gravador ADM (Projeto Redundância)\n- Entrega NTB leo;\n- Bloq Gerente;\n- NF Rod;\n- Analise Speed LJ08 - Troca com Rod;\n- Acelerar Magikey;\n- Aprovação OS Olhar Digital;\n- Acelerar Stelseg e Cotar com terceiros equipamentos de segurança;\n\n\nAções em radar para esta semana.\n\n- Fechamento de PDV;\n- 1x1 Time;\n- Cancelamento NextIP;\n- Agenda Marinalva;\n- Acompanhar Subidas de Nf fiscal;\n- Check em chegada de Catraca;\n- Check em sistema Olhar Digital (Chamados);"
+    },
     {
       "id": 1780873161254,
       "title": "Check Semanal 01 a 05/07",
