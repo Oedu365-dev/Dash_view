@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://fonts.gstatic.com https://cdnjs.cloudflare.com data: blob:;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time de Tech G_Matos — Visão Executiva</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+  :root {
+    --ink: #0f1923; --ink-mid: #2a3a4a; --ink-light: #4a5d6e;
+    --paper: #f4f1eb; --paper-warm: #ede9e0; --paper-cool: #eef0f3;
+    --accent: #1a4a6b; --accent-bright: #1e6fa8;
+    --gold: #b8963e; --gold-light: #d4b06a;
+    --danger: #c0392b; --success: #27ae60; --warn: #e67e22;
+    --border: rgba(15,25,35,0.12); --shadow: 0 2px 16px rgba(15,25,35,0.08);
+    --planner: #1a4a6b; --trello: #b8963e;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Instrument Sans', sans-serif; background: var(--paper); color: var(--ink); min-height: 100vh; font-size: 14px; }
+
+  /* HEADER */
+  header { background: var(--ink); color: var(--paper); padding: 20px 40px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid var(--gold); }
+  .header-brand h1 { font-family: 'Fraunces', serif; font-weight: 700; font-size: 22px; color: var(--paper); line-height: 1; }
+  .header-brand span { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gold-light); letter-spacing: 2px; text-transform: uppercase; margin-top: 3px; display: block; }
+  .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .update-badge { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--gold-light); letter-spacing: 1px; }
+  .badge { padding: 4px 12px; border-radius: 2px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; }
+  .badge-planner { background: var(--planner); color: #a8c8e8; }
+  .badge-trello   { background: var(--trello);  color: #fdedc6; }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 40px 40px 60px; }
+
+  /* LOADING */
+  #loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 16px; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent-bright); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; color: var(--ink-light); text-transform: uppercase; }
+  #error-state { display: none; text-align: center; padding: 80px 20px; }
+  #error-state h2 { font-family: 'Fraunces', serif; font-size: 24px; color: var(--ink-mid); margin-bottom: 8px; }
+  #error-state p { color: var(--ink-light); font-size: 13px; }
+
+  /* CONTENT */
+  #content { display: none; }
+
+  /* KPI */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px; }
+  .kpi-card { background: white; border: 1px solid var(--border); border-radius: 4px; padding: 20px; position: relative; overflow: hidden; }
+  .kpi-card::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 3px; }
+  .kpi-card.total::after { background: var(--ink-light); }
+  .kpi-card.done::after  { background: var(--success); }
+  .kpi-card.prog::after  { background: var(--accent-bright); }
+  .kpi-card.late::after  { background: var(--danger); }
+  .kpi-card.soon::after  { background: var(--warn); }
+  .kpi-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-light); margin-bottom: 10px; }
+  .kpi-value { font-family: 'Fraunces', serif; font-size: 36px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .kpi-card.total .kpi-value { color: var(--ink); }
+  .kpi-card.done  .kpi-value { color: var(--success); }
+  .kpi-card.prog  .kpi-value { color: var(--accent-bright); }
+  .kpi-card.late  .kpi-value { color: var(--danger); }
+  .kpi-card.soon  .kpi-value { color: var(--warn); }
+  .kpi-sub { font-size: 11px; color: var(--ink-light); }
+
+  /* INSIGHTS */
+  .insights-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 32px; }
+  .insight-card { border-radius: 4px; padding: 16px 20px; border-left: 4px solid; }
+  .insight-card.danger  { background: #fdf0f0; border-color: var(--danger); }
+  .insight-card.warn    { background: #fdf6ec; border-color: var(--warn); }
+  .insight-card.success { background: #edf7f2; border-color: var(--success); }
+  .insight-card.info    { background: #eef5fb; border-color: var(--accent-bright); }
+  .insight-icon  { font-size: 16px; margin-bottom: 4px; }
+  .insight-title { font-size: 12px; font-weight: 600; }
+  .insight-desc  { font-size: 11px; color: var(--ink-light); margin-top: 2px; }
+
+  /* CHARTS */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 32px; }
+  .chart-card { background: white; border: 1px solid var(--border); border-radius: 4px; padding: 24px; }
+  .chart-card h4 { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-light); margin-bottom: 20px; }
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* OWNER BARS */
+  .progress-bar-wrap { margin-bottom: 10px; }
+  .progress-bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .progress-bar-label span:first-child { font-weight: 500; }
+  .progress-bar-label span:last-child { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink-light); }
+  .progress-bar { height: 6px; background: var(--paper-cool); border-radius: 3px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 3px; background: var(--accent-bright); transition: width 0.8s ease; }
+
+  /* SECTION TITLE */
+  .section-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* TABLE */
+  .table-wrap { background: white; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 32px; }
+  table.tasks { width: 100%; border-collapse: collapse; }
+  table.tasks thead { background: var(--ink); color: var(--paper); }
+  table.tasks th { padding: 12px 16px; text-align: left; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; font-weight: 500; white-space: nowrap; }
+  table.tasks td { padding: 11px 16px; border-bottom: 1px solid rgba(0,0,0,0.05); vertical-align: middle; }
+  table.tasks tr:last-child td { border-bottom: none; }
+  table.tasks tr:hover td { background: var(--paper-cool); }
+  .tag-source { display: inline-block; padding: 2px 8px; border-radius: 2px; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; font-weight: 500; }
+  .tag-source.planner { background: rgba(26,74,107,0.12); color: var(--planner); }
+  .tag-source.trello  { background: rgba(184,150,62,0.15); color: #7a6020; }
+  .tag-status { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .tag-status.concluído     { background: #e8f5ee; color: var(--success); }
+  .tag-status.em-andamento  { background: #e8f0f8; color: var(--accent); }
+  .tag-status.atrasado      { background: #fde8e8; color: var(--danger); }
+  .tag-status.nao-iniciado  { background: #f0f0f0; color: var(--ink-light); }
+  .tag-status.outro         { background: #f5f0e8; color: var(--warn); }
+  .date-late { color: var(--danger); font-weight: 600; }
+  .date-soon { color: var(--warn); font-weight: 600; }
+
+  /* FILTERS */
+  .filters-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filter-select { padding: 6px 10px; border: 1.5px solid var(--border); border-radius: 2px; font-family: 'Instrument Sans', sans-serif; font-size: 12px; background: white; cursor: pointer; color: var(--ink); }
+  .filter-search { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 2px; font-family: 'Instrument Sans', sans-serif; font-size: 12px; color: var(--ink); min-width: 200px; }
+  .filter-search:focus, .filter-select:focus { outline: none; border-color: var(--accent); }
+  .filter-clear { font-size: 11px; color: var(--accent-bright); cursor: pointer; text-decoration: underline; }
+
+  /* PAGINATION */
+  .table-footer { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--paper-cool); border-top: 1px solid var(--border); }
+  .table-footer span { font-size: 12px; color: var(--ink-light); }
+  .pagination { display: flex; gap: 4px; }
+  .page-btn { width: 30px; height: 30px; border: 1px solid var(--border); background: white; border-radius: 2px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--ink); }
+  .page-btn:hover { background: var(--paper-warm); }
+  .page-btn.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+  /* RODAPÉ */
+  .readonly-banner { background: var(--paper-warm); border: 1px solid var(--gold-light); border-left: 4px solid var(--gold); border-radius: 4px; padding: 12px 20px; margin-bottom: 32px; font-size: 12px; color: var(--ink-mid); display: flex; align-items: center; gap: 10px; }
+
+  @media (max-width: 900px) {
+    main { padding: 20px; }
+    header { padding: 16px 20px; }
+    .kpi-row { grid-template-columns: repeat(2,1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .insights-bar { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <h1>Time de Tech G_Matos</h1>
+    <span>Visão Executiva — Diretoria</span>
+  </div>
+  <div class="header-right">
+    <div class="update-badge" id="update-badge">—</div>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <span class="badge badge-planner">● Planner TI Marcão</span>
+      <span class="badge badge-trello">● Trello TI Brunão</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Carregando dados...</p>
+  </div>
+
+  <!-- ERRO -->
+  <div id="error-state">
+    <h2>Dados não encontrados</h2>
+    <p>O arquivo de dados ainda não foi publicado.<br>Aguarde a equipe de TI publicar o dashboard.</p>
+  </div>
+
+  <!-- CONTEÚDO -->
+  <div id="content">
+
+    <div class="readonly-banner">
+      📊 <span>Visão somente leitura — dados publicados pela equipe de TI. Atualizado em <strong id="published-at-label">—</strong></span>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card total"><div class="kpi-label">Total de Tarefas</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub" id="kpi-sources">—</div></div>
+      <div class="kpi-card done"><div class="kpi-label">Concluídas</div><div class="kpi-value" id="kpi-done">—</div><div class="kpi-sub" id="kpi-done-pct">—</div></div>
+      <div class="kpi-card prog"><div class="kpi-label">Em Andamento</div><div class="kpi-value" id="kpi-prog">—</div><div class="kpi-sub" id="kpi-prog-pct">—</div></div>
+      <div class="kpi-card late"><div class="kpi-label">Em Atraso</div><div class="kpi-value" id="kpi-late">—</div><div class="kpi-sub">com prazo vencido</div></div>
+      <div class="kpi-card soon"><div class="kpi-label">Vencem em 7 dias</div><div class="kpi-value" id="kpi-soon">—</div><div class="kpi-sub">requerem atenção</div></div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="insights-bar" id="insights-bar"></div>
+
+    <!-- CHARTS -->
+    <div class="charts-row">
+      <div class="chart-card"><h4>Status das Tarefas</h4><div class="chart-wrap"><canvas id="chart-status"></canvas></div></div>
+      <div class="chart-card"><h4>Distribuição por Fonte</h4><div class="chart-wrap"><canvas id="chart-source"></canvas></div></div>
+      <div class="chart-card"><h4>Prioridade</h4><div class="chart-wrap"><canvas id="chart-priority"></canvas></div></div>
+    </div>
+
+    <!-- OWNER BARS -->
+    <h3 class="section-title">Carga por Responsável</h3>
+    <div style="background:white;border:1px solid var(--border);border-radius:4px;padding:24px;margin-bottom:32px;">
+      <div id="owner-bars"></div>
+    </div>
+
+    <!-- TABLE -->
+    <h3 class="section-title">Todas as Tarefas</h3>
+    <div class="filters-bar">
+      <input class="filter-search" type="text" id="filter-search" placeholder="🔍 Buscar tarefa ou responsável..." oninput="applyFilters()">
+      <select class="filter-select" id="filter-source" onchange="applyFilters()">
+        <option value="">Todas as fontes</option>
+        <option value="planner">Planner</option>
+        <option value="trello">Trello</option>
+      </select>
+      <select class="filter-select" id="filter-status" onchange="applyFilters()"><option value="">Todos os status</option></select>
+      <select class="filter-select" id="filter-owner" onchange="applyFilters()"><option value="">Todos os responsáveis</option></select>
+      <span class="filter-clear" onclick="clearFilters()">Limpar filtros</span>
+    </div>
+    <div class="table-wrap">
+      <table class="tasks">
+        <thead><tr>
+          <th>Tarefa</th><th>Responsável</th><th>Status</th><th>Prazo</th><th>Prioridade</th><th>Fonte</th>
+        </tr></thead>
+        <tbody id="tasks-tbody"></tbody>
+      </table>
+      <div class="table-footer">
+        <span id="table-count">—</span>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+<script>
+// ════════════════════════════════════════
+//  CARREGAR DATA.JSON DO PRÓPRIO REPO
+// ════════════════════════════════════════
+let allTasks = [], filteredTasks = [];
+let currentPage = 1;
+const PAGE_SIZE = 20;
+let chartStatus, chartSource, chartPriority;
+
+async function loadData() {
+  try {
+    // Busca data.json na mesma origem (GitHub Pages serve do mesmo repo)
+    const res = await fetch('./data.json?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    renderAll(data);
+  } catch(err) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-state').style.display = 'block';
+    console.error('Erro ao carregar data.json:', err);
+  }
+}
+
+function renderAll(data) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+
+  // Data de publicação
+  const pub = new Date(data.publishedAt);
+  const pubStr = pub.toLocaleString('pt-BR', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  document.getElementById('update-badge').textContent = 'Atualizado ' + pubStr;
+  document.getElementById('published-at-label').textContent = pubStr;
+
+  // Reconstruir tasks com datas
+  allTasks = (data.tasks || []).map(t => ({
+    ...t,
+    due: t.due ? new Date(t.due + 'T12:00:00') : null
+  }));
+  filteredTasks = [...allTasks];
+
+  renderKPIs();
+  renderInsights();
+  renderCharts();
+  renderOwnerBars();
+  populateFilters();
+  renderTable();
+}
+
+function renderKPIs() {
+  const now = new Date();
+  const total = allTasks.length;
+  const done  = allTasks.filter(t => t.status === 'concluído').length;
+  const prog  = allTasks.filter(t => t.status === 'em-andamento').length;
+  const late  = allTasks.filter(t => t.due && t.due < now && t.status !== 'concluído').length;
+  const soon  = allTasks.filter(t => {
+    if (!t.due || t.status === 'concluído') return false;
+    const diff = (t.due - now) / 86400000;
+    return diff >= 0 && diff <= 7;
+  }).length;
+  const pl = allTasks.filter(t => t.source === 'planner').length;
+  const tr = allTasks.filter(t => t.source === 'trello').length;
+
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-sources').textContent = pl + ' Planner · ' + tr + ' Trello';
+  document.getElementById('kpi-done').textContent = done;
+  document.getElementById('kpi-done-pct').textContent = total ? Math.round(done/total*100) + '% do total' : '—';
+  document.getElementById('kpi-prog').textContent = prog;
+  document.getElementById('kpi-prog-pct').textContent = total ? Math.round(prog/total*100) + '% do total' : '—';
+  document.getElementById('kpi-late').textContent = late;
+  document.getElementById('kpi-soon').textContent = soon;
+}
+
+function renderInsights() {
+  const now = new Date();
+  const total = allTasks.length;
+  const done  = allTasks.filter(t => t.status === 'concluído').length;
+  const late  = allTasks.filter(t => t.due && t.due < now && t.status !== 'concluído').length;
+  const soon  = allTasks.filter(t => { if (!t.due || t.status === 'concluído') return false; const d = (t.due-now)/86400000; return d>=0 && d<=7; }).length;
+  const high  = allTasks.filter(t => t.priority === 'alta' && t.status !== 'concluído').length;
+
+  const ins = [];
+  if (late > 0) ins.push({type:'danger', icon:'🚨', title: late + ' tarefa' + (late>1?'s':'') + ' em atraso', desc:'Requerem ação imediata'});
+  if (soon > 0) ins.push({type:'warn',   icon:'⏰', title: soon + ' tarefa' + (soon>1?'s':'') + ' vencem em 7 dias', desc:'Monitore esta semana'});
+  if (done > 0) ins.push({type:'success',icon:'✅', title: Math.round(done/total*100) + '% de conclusão geral', desc:'Taxa de tarefas finalizadas'});
+  if (high > 0) ins.push({type:'info',   icon:'🎯', title: high + ' tarefa' + (high>1?'s':'') + ' alta prioridade abertas', desc:'Itens críticos em execução'});
+  while (ins.length < 3) ins.push({type:'info', icon:'📊', title:'Base unificada', desc:total + ' tarefas de Planner e Trello'});
+
+  document.getElementById('insights-bar').innerHTML = ins.slice(0,3).map(i =>
+    '<div class="insight-card ' + i.type + '"><div class="insight-icon">' + i.icon + '</div><div class="insight-title">' + i.title + '</div><div class="insight-desc">' + i.desc + '</div></div>'
+  ).join('');
+}
+
+function renderCharts() {
+  const done = allTasks.filter(t=>t.status==='concluído').length;
+  const prog = allTasks.filter(t=>t.status==='em-andamento').length;
+  const late = allTasks.filter(t=>t.status==='atrasado').length;
+  const notS = allTasks.filter(t=>t.status==='nao-iniciado').length;
+  const othr = allTasks.filter(t=>t.status==='outro').length;
+  const pl   = allTasks.filter(t=>t.source==='planner').length;
+  const tr   = allTasks.filter(t=>t.source==='trello').length;
+  const alta = allTasks.filter(t=>t.priority==='alta').length;
+  const med  = allTasks.filter(t=>t.priority==='media').length;
+  const baixa= allTasks.filter(t=>t.priority==='baixa').length;
+  const po   = allTasks.filter(t=>t.priority==='outro').length;
+
+  const dOpts = { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ font:{size:11}, padding:10, usePointStyle:true } } } };
+
+  if (chartStatus)   chartStatus.destroy();
+  if (chartSource)   chartSource.destroy();
+  if (chartPriority) chartPriority.destroy();
+
+  chartStatus = new Chart(document.getElementById('chart-status'), { type:'doughnut', data:{
+    labels:['Concluído','Em andamento','Atrasado','Não iniciado','Outro'],
+    datasets:[{ data:[done,prog,late,notS,othr], backgroundColor:['#27ae60','#1e6fa8','#c0392b','#95a5a6','#d4b06a'], borderWidth:2, borderColor:'#fff' }]
+  }, options: dOpts });
+
+  chartSource = new Chart(document.getElementById('chart-source'), { type:'doughnut', data:{
+    labels:['Planner','Trello'],
+    datasets:[{ data:[pl,tr], backgroundColor:['#1a4a6b','#b8963e'], borderWidth:2, borderColor:'#fff' }]
+  }, options: dOpts });
+
+  chartPriority = new Chart(document.getElementById('chart-priority'), { type:'doughnut', data:{
+    labels:['Alta','Média','Baixa','Outros'],
+    datasets:[{ data:[alta,med,baixa,po], backgroundColor:['#c0392b','#e67e22','#27ae60','#95a5a6'], borderWidth:2, borderColor:'#fff' }]
+  }, options: dOpts });
+}
+
+function renderOwnerBars() {
+  const counts = {};
+  allTasks.forEach(t => {
+    const o = t.owner || '—';
+    if (!counts[o]) counts[o] = {total:0, done:0};
+    counts[o].total++;
+    if (t.status === 'concluído') counts[o].done++;
+  });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1].total-a[1].total).slice(0,10);
+  document.getElementById('owner-bars').innerHTML = sorted.map(([name,c]) => {
+    const pct = Math.round(c.done/c.total*100);
+    return '<div class="progress-bar-wrap"><div class="progress-bar-label"><span>' + name + '</span><span>' + c.done + '/' + c.total + ' · ' + pct + '%</span></div><div class="progress-bar"><div class="progress-bar-fill" style="width:' + pct + '%"></div></div></div>';
+  }).join('');
+}
+
+function populateFilters() {
+  const statuses = [...new Set(allTasks.map(t=>t.statusRaw).filter(Boolean))];
+  const owners   = [...new Set(allTasks.map(t=>t.owner).filter(x=>x&&x!=='—'))].sort();
+  document.getElementById('filter-status').innerHTML = '<option value="">Todos os status</option>' + statuses.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+  document.getElementById('filter-owner').innerHTML  = '<option value="">Todos os responsáveis</option>' + owners.map(o=>'<option value="'+o+'">'+o+'</option>').join('');
+}
+
+function applyFilters() {
+  const search = document.getElementById('filter-search').value.toLowerCase();
+  const source = document.getElementById('filter-source').value;
+  const status = document.getElementById('filter-status').value;
+  const owner  = document.getElementById('filter-owner').value;
+  filteredTasks = allTasks.filter(t => {
+    if (search && !t.title.toLowerCase().includes(search) && !t.owner.toLowerCase().includes(search)) return false;
+    if (source && t.source !== source) return false;
+    if (status && t.statusRaw !== status) return false;
+    if (owner  && t.owner   !== owner)  return false;
+    return true;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function clearFilters() {
+  document.getElementById('filter-search').value = '';
+  document.getElementById('filter-source').value = '';
+  document.getElementById('filter-status').value = '';
+  document.getElementById('filter-owner').value  = '';
+  applyFilters();
+}
+
+function renderTable() {
+  const now = new Date();
+  const sL  = {'concluído':'Concluído','em-andamento':'Em andamento','atrasado':'Atrasado','nao-iniciado':'Não iniciado','outro':'Outro'};
+  const pL  = {'alta':'Alta','media':'Média','baixa':'Baixa','outro':'—'};
+  const start = (currentPage-1)*PAGE_SIZE;
+  const page  = filteredTasks.slice(start, start+PAGE_SIZE);
+
+  document.getElementById('tasks-tbody').innerHTML = page.map(t => {
+    let dueStr='—', dueClass='';
+    if (t.due) {
+      dueStr = t.due.toLocaleDateString('pt-BR');
+      const diff = (t.due-now)/86400000;
+      if (diff < 0 && t.status !== 'concluído') dueClass = 'date-late';
+      else if (diff >= 0 && diff <= 7 && t.status !== 'concluído') dueClass = 'date-soon';
+    }
+    return '<tr><td style="font-weight:500;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(t.title)+'</td>'
+      +'<td>'+esc(t.owner)+'</td>'
+      +'<td><span class="tag-status '+t.status+'">'+(sL[t.status]||t.statusRaw)+'</span></td>'
+      +'<td><span class="'+dueClass+'">'+dueStr+'</span></td>'
+      +'<td>'+(pL[t.priority]||t.priorityRaw||'—')+'</td>'
+      +'<td><span class="tag-source '+t.source+'">'+(t.source==='planner'?'Planner':'Trello')+'</span></td></tr>';
+  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--ink-light)">Nenhuma tarefa encontrada</td></tr>';
+
+  document.getElementById('table-count').textContent = filteredTasks.length + ' tarefa' + (filteredTasks.length!==1?'s':'') + ' (mostrando ' + (start+1) + '–' + Math.min(start+PAGE_SIZE, filteredTasks.length) + ')';
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = Math.ceil(filteredTasks.length/PAGE_SIZE);
+  const pag = document.getElementById('pagination');
+  if (total <= 1) { pag.innerHTML=''; return; }
+  let html='';
+  if (currentPage>1) html+='<button class="page-btn" onclick="goPage('+(currentPage-1)+')">‹</button>';
+  for (let i=Math.max(1,currentPage-2);i<=Math.min(total,currentPage+2);i++)
+    html+='<button class="page-btn '+(i===currentPage?'active':'')+'" onclick="goPage('+i+')">'+i+'</button>';
+  if (currentPage<total) html+='<button class="page-btn" onclick="goPage('+(currentPage+1)+')">›</button>';
+  pag.innerHTML=html;
+}
+function goPage(p) { currentPage=p; renderTable(); }
+function esc(s) { return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Iniciar
+loadData();
+</script>
+</body>
+</html>
