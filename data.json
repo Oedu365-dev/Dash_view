@@ -1,5 +1,5 @@
 {
-  "publishedAt": "2026-06-07T23:30:22.624Z",
+  "publishedAt": "2026-06-07T23:51:03.141Z",
   "publishedBy": "oedu365-dev",
   "tasks": [
     {
@@ -2581,8 +2581,8 @@
   },
   "checks": [
     {
-      "id": 1780874960213,
-      "title": "Check sem título",
+      "id": 1780876219503,
+      "title": "Check Semanal 01 a 05/07",
       "date": "07/06/2026",
       "sentiment": "Agitado",
       "almejo": "Constancia",
