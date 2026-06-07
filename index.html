@@ -155,6 +155,17 @@
 </header>
 
 <main>
+  <!-- NAV ABAS -->
+  <div id="main-nav" style="display:none;border-bottom:2px solid var(--border);margin-bottom:32px;display:flex;gap:0">
+    <button onclick="switchView('dashboard')" id="nav-dash"
+      style="padding:12px 24px;background:none;border:none;border-bottom:3px solid var(--ink);margin-bottom:-2px;font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:var(--ink)">
+      📊 Time de Tech G_Matos
+    </button>
+    <button onclick="switchView('check')" id="nav-check"
+      style="padding:12px 24px;background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;color:var(--ink-light)">
+      📋 Check Semanal Edu
+    </button>
+  </div>
 
   <!-- LOADING -->
   <div id="loading">
@@ -227,6 +238,47 @@
     </div>
 
   </div><!-- /content -->
+
+  <!-- CHECK SEMANAL -->
+  <div id="check-view" style="display:none">
+    <div class="readonly-banner">
+      📋 <span>Checks semanais publicados pela equipe de TI.</span>
+    </div>
+
+    <div id="check-list-wrap"></div>
+
+    <!-- detalhe do check -->
+    <div id="check-detail" style="display:none;background:white;border:1px solid var(--border);border-radius:4px;padding:32px;margin-top:24px;">
+      <button onclick="closeCheckDetail()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--ink-light);margin-bottom:20px;">← Voltar para lista</button>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:6px">Check Semanal</div>
+      <div class="section-title" id="cd-title" style="font-size:22px;margin-bottom:20px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px">
+        <div style="background:var(--paper-cool);border-radius:4px;padding:16px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px">Sentimento da Semana</div>
+          <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:600" id="cd-sentiment">—</div>
+        </div>
+        <div style="background:var(--paper-cool);border-radius:4px;padding:16px">
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px">Almejo para a Próxima Semana</div>
+          <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:600" id="cd-almejo">—</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-light);margin-bottom:12px">
+            Demandas da Semana <span id="cd-count" style="color:var(--accent-bright)"></span>
+          </div>
+          <ul id="cd-items" style="list-style:none;display:flex;flex-direction:column;gap:8px"></ul>
+        </div>
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--ink-light);margin-bottom:12px">
+            Ações em Radar <span id="cd-radar-count" style="color:var(--gold)"></span>
+          </div>
+          <ul id="cd-radar" style="list-style:none;display:flex;flex-direction:column;gap:8px"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <script>
@@ -275,6 +327,10 @@ function renderAll(data) {
   renderOwnerBars();
   populateFilters();
   renderTable();
+
+  // Renderizar checks
+  window._checksData = data.checks || [];
+  renderChecks(window._checksData);
 }
 
 function renderKPIs() {
@@ -442,6 +498,71 @@ function renderPagination() {
 }
 function goPage(p) { currentPage=p; renderTable(); }
 function esc(s) { return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+
+// ═══════════════════════════
+//  NAV + CHECK SEMANAL VIEW
+// ═══════════════════════════
+function switchView(view) {
+  const isDash  = view === 'dashboard';
+  document.getElementById('content').style.display    = isDash ? 'block' : 'none';
+  document.getElementById('check-view').style.display = isDash ? 'none'  : 'block';
+  document.getElementById('nav-dash').style.borderBottomColor  = isDash ? 'var(--ink)' : 'transparent';
+  document.getElementById('nav-dash').style.color               = isDash ? 'var(--ink)' : 'var(--ink-light)';
+  document.getElementById('nav-dash').style.fontWeight          = isDash ? '600' : '500';
+  document.getElementById('nav-check').style.borderBottomColor = isDash ? 'transparent' : 'var(--ink)';
+  document.getElementById('nav-check').style.color              = isDash ? 'var(--ink-light)' : 'var(--ink)';
+  document.getElementById('nav-check').style.fontWeight         = isDash ? '500' : '600';
+}
+
+function renderChecks(checks) {
+  const nav = document.getElementById('main-nav');
+  if (nav) nav.style.display = checks && checks.length ? 'flex' : 'none';
+
+  if (!checks || !checks.length) {
+    document.getElementById('check-list-wrap').innerHTML =
+      '<div style="text-align:center;padding:60px;color:var(--ink-light)"><h3 style="font-family:Fraunces,serif;font-size:20px;margin-bottom:8px">Nenhum check publicado ainda</h3><p style="font-size:13px">Aguarde a equipe de TI publicar o próximo check semanal.</p></div>';
+    return;
+  }
+
+  document.getElementById('check-list-wrap').innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">' +
+    checks.map((c, i) =>
+      '<div onclick="openCheck(' + i + ')" style="background:white;border:1px solid var(--border);border-radius:4px;padding:24px;cursor:pointer;transition:box-shadow .2s;border-left:4px solid var(--gold)" >' +
+        '<div style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Check Semanal</div>' +
+        '<div style="font-family:Fraunces,serif;font-size:16px;font-weight:600;margin-bottom:12px">' + esc(c.title||'Sem título') + '</div>' +
+        '<div style="display:flex;gap:16px;font-size:12px;color:var(--ink-light)">' +
+          '<span>📋 ' + (c.items ? c.items.length : 0) + ' demandas</span>' +
+          '<span>📡 ' + (c.radar ? c.radar.length : 0) + ' em radar</span>' +
+        '</div>' +
+        (c.sentiment ? '<div style="margin-top:10px;font-size:12px;color:var(--ink-mid)">😌 ' + esc(c.sentiment) + '</div>' : '') +
+      '</div>'
+    ).join('') + '</div>';
+}
+
+function openCheck(idx) {
+  const checks = window._checksData;
+  if (!checks || !checks[idx]) return;
+  const c = checks[idx];
+  document.getElementById('check-detail').style.display = 'block';
+  document.getElementById('check-list-wrap').style.display = 'none';
+  document.getElementById('cd-title').textContent     = c.title || 'Sem título';
+  document.getElementById('cd-sentiment').textContent = c.sentiment || '—';
+  document.getElementById('cd-almejo').textContent    = c.almejo || '—';
+  document.getElementById('cd-count').textContent     = '(' + (c.items ? c.items.length : 0) + ')';
+  document.getElementById('cd-radar-count').textContent = '(' + (c.radar ? c.radar.length : 0) + ')';
+  document.getElementById('cd-items').innerHTML = (c.items||[]).map(item =>
+    '<li style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--accent-bright);margin-top:2px">▸</span><span style="font-size:13px">' + esc(item) + '</span></li>'
+  ).join('');
+  document.getElementById('cd-radar').innerHTML = (c.radar||[]).map(item =>
+    '<li style="display:flex;gap:8px;align-items:flex-start"><span style="color:var(--gold);margin-top:2px">◎</span><span style="font-size:13px">' + esc(item) + '</span></li>'
+  ).join('');
+}
+
+function closeCheckDetail() {
+  document.getElementById('check-detail').style.display = 'none';
+  document.getElementById('check-list-wrap').style.display = 'block';
+}
 
 // Iniciar
 loadData();
