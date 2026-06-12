@@ -127,7 +127,19 @@
   .page-btn.active { background: var(--ink); color: white; border-color: var(--ink); }
 
   /* RODAPÉ */
-  .readonly-banner { background: var(--paper-warm); border: 1px solid var(--gold-light); border-left: 4px solid var(--gold); border-radius: 4px; padding: 12px 20px; margin-bottom: 32px; font-size: 12px; color: var(--ink-mid); display: flex; align-items: center; gap: 10px; }
+  /* FILTRO DE PERÍODO DIRETORIA */
+.period-bar{background:var(--ink);padding:12px 32px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:24px;border-radius:4px}
+.period-bar label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);white-space:nowrap}
+.period-btn{padding:5px 12px;border:1.5px solid rgba(255,255,255,0.15);background:transparent;color:rgba(255,255,255,0.7);font-family:'Instrument Sans',sans-serif;font-size:12px;cursor:pointer;border-radius:2px;transition:all .2s;white-space:nowrap}
+.period-btn:hover{border-color:var(--gold);color:var(--gold)}
+.period-btn.active{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:600}
+.period-sep{width:1px;height:18px;background:rgba(255,255,255,0.1)}
+.period-date{padding:5px 8px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);font-family:'Instrument Sans',sans-serif;font-size:12px;border-radius:2px}
+.period-date:focus{outline:none;border-color:var(--gold)}
+.period-campo{padding:5px 8px;border:1.5px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);font-family:'DM Mono',monospace;font-size:10px;border-radius:2px}
+.period-range-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold-light);white-space:nowrap}
+
+.readonly-banner { background: var(--paper-warm); border: 1px solid var(--gold-light); border-left: 4px solid var(--gold); border-radius: 4px; padding: 12px 20px; margin-bottom: 32px; font-size: 12px; color: var(--ink-mid); display: flex; align-items: center; gap: 10px; }
 
   @media (max-width: 900px) {
     main { padding: 20px; }
@@ -189,6 +201,29 @@
 
   <!-- CONTEÚDO -->
   <div id="content">
+
+    <!-- BARRA DE PERÍODO -->
+    <div class="period-bar" id="period-bar-dir">
+      <label>Período:</label>
+      <button class="period-btn active" onclick="setPeriodDir('all')"      id="dpb-all">Tudo</button>
+      <button class="period-btn"        onclick="setPeriodDir('today')"    id="dpb-today">Hoje</button>
+      <button class="period-btn"        onclick="setPeriodDir('week')"     id="dpb-week">Esta semana</button>
+      <button class="period-btn"        onclick="setPeriodDir('month')"    id="dpb-month">Este mês</button>
+      <button class="period-btn"        onclick="setPeriodDir('lastmonth')" id="dpb-lastmonth">Mês anterior</button>
+      <div class="period-sep"></div>
+      <button class="period-btn"        onclick="setPeriodDir('custom')"   id="dpb-custom">Personalizado</button>
+      <input type="date" id="dpd-from" class="period-date" style="display:none" onchange="applyCustomDir()">
+      <span style="color:rgba(255,255,255,0.4);font-size:11px;display:none" id="dpd-sep">até</span>
+      <input type="date" id="dpd-to"   class="period-date" style="display:none" onchange="applyCustomDir()">
+      <div class="period-sep"></div>
+      <label>Campo:</label>
+      <select class="period-campo" id="period-campo-dir" onchange="reapplyPeriodDir()">
+        <option value="aberto">Abertura</option>
+        <option value="vencimento">Vencimento</option>
+        <option value="resolvido">Resolução</option>
+      </select>
+      <span class="period-range-label" id="period-range-dir">Todos os chamados</span>
+    </div>
 
     <div class="readonly-banner">
       📊 <span>Visão somente leitura — dados publicados por Oedu365. Atualizado em <strong id="published-at-label">—</strong></span>
@@ -371,8 +406,12 @@ function renderAll(data) {
   // Reconstruir tasks com datas
   allTasks = (data.tasks || []).map(t => ({
     ...t,
-    due: t.due ? new Date(t.due + 'T12:00:00') : null
+    due:       t.due       ? new Date(t.due       + 'T12:00:00') : null,
+    aberto:    t.aberto    ? new Date(t.aberto    + 'T12:00:00') : null,
+    vencimento:t.vencimento? new Date(t.vencimento+ 'T12:00:00') : null,
+    resolvido: t.resolvido ? new Date(t.resolvido + 'T12:00:00') : null,
   }));
+  allTasksDir = [...allTasks]; // cópia completa para filtro de período
   filteredTasks = [...allTasks];
 
   renderKPIs();
@@ -769,6 +808,91 @@ function renderProjetosDir(projetos) {
       + '</td>'
       + '</tr>';
   }).join('');
+}
+
+
+// ════════════════════════════════════════
+//  FILTRO DE PERÍODO — DIRETORIA
+// ════════════════════════════════════════
+let activePeriodDir = 'all';
+let periodFromDir = null, periodToDir = null;
+let allTasksDir = []; // cópia completa dos chamados
+
+function setPeriodDir(p) {
+  activePeriodDir = p;
+  const showCustom = p === 'custom';
+  document.getElementById('dpd-from').style.display = showCustom ? 'inline-block' : 'none';
+  document.getElementById('dpd-to').style.display   = showCustom ? 'inline-block' : 'none';
+  document.getElementById('dpd-sep').style.display  = showCustom ? 'inline-block' : 'none';
+  ['all','today','week','month','lastmonth','custom'].forEach(id => {
+    document.getElementById('dpb-'+id).classList.toggle('active', id === p);
+  });
+  if (p !== 'custom') applyPeriodDir();
+}
+
+function applyCustomDir() {
+  const from = document.getElementById('dpd-from').value;
+  const to   = document.getElementById('dpd-to').value;
+  if (from) periodFromDir = new Date(from + 'T00:00:00');
+  if (to)   periodToDir   = new Date(to   + 'T23:59:59');
+  if (from || to) applyPeriodDir();
+}
+
+function reapplyPeriodDir() {
+  if (activePeriodDir === 'custom') applyCustomDir();
+  else applyPeriodDir();
+}
+
+function getPeriodRangeDir() {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  switch(activePeriodDir) {
+    case 'all':       return { from: null, to: null };
+    case 'today':     return { from: today, to: new Date(today.getTime()+86399999) };
+    case 'week': {
+      const dow = today.getDay();
+      const mon = new Date(today); mon.setDate(today.getDate()-(dow===0?6:dow-1));
+      const sun = new Date(mon);   sun.setDate(mon.getDate()+6); sun.setHours(23,59,59);
+      return { from: mon, to: sun };
+    }
+    case 'month': {
+      return { from: new Date(now.getFullYear(),now.getMonth(),1), to: new Date(now.getFullYear(),now.getMonth()+1,0,23,59,59) };
+    }
+    case 'lastmonth': {
+      return { from: new Date(now.getFullYear(),now.getMonth()-1,1), to: new Date(now.getFullYear(),now.getMonth(),0,23,59,59) };
+    }
+    case 'custom': return { from: periodFromDir, to: periodToDir };
+    default:       return { from: null, to: null };
+  }
+}
+
+function applyPeriodDir() {
+  const { from, to } = getPeriodRangeDir();
+  const campo = document.getElementById('period-campo-dir').value;
+
+  const lbl = document.getElementById('period-range-dir');
+  if (!from && !to) {
+    lbl.textContent = 'Todos os chamados';
+  } else {
+    const fmt = d => d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    lbl.textContent = (from?fmt(from):'—')+' → '+(to?fmt(to):'—')+' · '+({aberto:'Abertura',vencimento:'Vencimento',resolvido:'Resolução'}[campo]);
+  }
+
+  // Filtrar
+  allTasks = allTasksDir.filter(c => {
+    if (!from && !to) return true;
+    const d = c[campo]; if (!d) return false;
+    if (from && d < from) return false;
+    if (to   && d > to)   return false;
+    return true;
+  });
+
+  // Re-renderizar KPIs, insights, charts, tabela
+  renderKPIs();
+  renderInsights();
+  renderCharts();
+  renderOwnerBars();
+  renderTable();
 }
 
 // Iniciar
